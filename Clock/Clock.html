@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+	body {
+	  background-color: #fff;
+	  color: #111;
+	  margin: 0px;
+	  overflow: hidden;
+	  font-family: Monospace;
+	  font-size: 20px;
+	  position: absolute;
+	}
+
+	#info {
+	  position: absolute;
+	  top: 0px;
+	  width: 100%;
+	  padding: 5px;
+	  text-align: center;
+	  color: #FFFFFF
+	}
+
+	#button {
+	  position: absolute;
+	  top: 10%;
+	  width: 100%;
+	  text-align: center;
+	}
+</style>
+</head>
+<div id="info">
+  I3B38 CLOCK<br>
+  長按（超過1秒）START/STOP按鈕可以RE
+</div>
+
+<div id='button'>
+  <input type="button" value="Start" id="start">
+  <input type="button" value="+10 Sec" id="plusSec">
+  <input type="button" value="Change Mode" id="changeMode">
+</div>
+
+<audio id="soundAlert" style="display:none"><source src="audio/time.mp3" type='audio/mp3'></audio>
+
+<script src="https://threejs.org/build/three.min.js"></script>
+<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+<script src="https://jyunming-chen.github.io/tutsplus/js/KeyboardState.js"></script>
+<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+
+<body>
+<script>
+var scene, renderer, camera;
+var hand;
+var angle = 0;
+var mode = true;
+var start = false;
+var finish = false;
+
+function init() {
+  renderer = new THREE.WebGLRenderer();
+  document.body.appendChild(renderer.domElement);
+  var width = window.innerWidth;
+  var height = window.innerHeight;
+  renderer.setSize(width, height);
+  scene = new THREE.Scene();
+  //鏡頭
+  camera = new THREE.PerspectiveCamera(50, width / height, 1, 100);
+  camera.position.z = 40;
+  camera.lookAt(new THREE.Vector3(0, 0, 0));
+  //控制
+  let controls = new THREE.OrbitControls(camera, renderer.domElement);
+  document.body.appendChild(renderer.domElement);
+  //////////////////////////////////////////////////////////
+  var clockFace = new THREE.Mesh(new THREE.CylinderGeometry(10, 10, 4, 40, 40), new THREE.MeshBasicMaterial({
+    color: 0xFFFFFF,
+    side: THREE.DoubleSide
+  }));
+  clockFace.position.z = -1;
+  clockFace.rotateX(Math.PI / 2);
+  scene.add(clockFace);
+  //////////////////////////////////////////////////////////
+  let clockFrame = new THREE.Mesh(new THREE.CylinderGeometry(11, 11, 5, 40, 40), new THREE.MeshNormalMaterial({
+    side: THREE.DoubleSide
+  }));
+  clockFrame.position.z = -2.5;
+  clockFrame.rotateX(Math.PI / 2);
+  scene.add(clockFrame);
+  //////////////////////////////////////////////////////////
+  var clockNum = [];
+  var picURL = [
+    'https://i.imgur.com/GrijM8m.png',
+    'https://i.imgur.com/Fu3TAmi.png',
+    'https://i.imgur.com/BnxV6pp.png',
+    'https://i.imgur.com/SreuA3O.png',
+    'https://i.imgur.com/wXKqVCV.png',
+    'https://i.imgur.com/n916oxi.png',
+    'https://i.imgur.com/UhyIrv2.png',
+    'https://i.imgur.com/gztwwlF.png',
+    'https://i.imgur.com/ioZY0A1.png',
+    'https://i.imgur.com/rBebNeB.png',
+    'https://i.imgur.com/75SXyx0.png',
+    'https://i.imgur.com/kBV9hFw.png'
+  ]
+  for (let i = 0; i < 12; i++) {
+    let loader = new THREE.TextureLoader();
+    let texture = loader.load(picURL[i]);
+    let texMat = new THREE.MeshBasicMaterial({
+      map: texture,
+      transparent: true,
+      side: THREE.DoubleSide
+    });
+    let num = new THREE.Mesh(new THREE.PlaneGeometry(3, 3), texMat);
+    num.position.z = 1.1;
+    clockNum[i] = num;
+  }
+
+  for (let i = 0; i < 12; i++) {
+    clockNum[i].position.x = 8 * Math.sin((i + 1) * 2 * Math.PI / 12);
+    clockNum[i].position.y = 8 * Math.cos((i + 1) * 2 * Math.PI / 12);
+    scene.add(clockNum[i]);
+  }
+  //////////////////////////////////////////////////////////
+  let geometry = new THREE.BufferGeometry();
+  let indices = [];
+  let vertices = [];
+  let colors = [];
+  vertices.push(
+    1, 1, 0, //0
+    0, 6, 0, //1
+    -1, 1, 0, //2
+    0, 0, 0, //3
+  );
+  indices.push(3, 0, 1, 1, 2, 3);
+  colors.push(
+    1, 0, 0,
+    1, 1, 1,
+    0, 1, 0,
+    0, 0, 1
+  );
+  geometry.setIndex(indices);
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geometry.computeVertexNormals();
+  let material = new THREE.MeshBasicMaterial({
+    vertexColors: true,
+    side: THREE.DoubleSide
+  });
+  hand = new THREE.Mesh(geometry, material);
+  hand.position.z = 1.2;
+  scene.add(hand);
+}
+
+function animate() {
+  render();
+  //////////////////////////////////////////////////////////
+  requestAnimationFrame(animate);
+}
+
+function move() {
+  if (start) {
+    if (mode) {
+      angle += (2 * Math.PI) / 600;
+      if (angle.toFixed(3) >= ((2 * Math.PI).toFixed(3))) {
+        angle = 0;
+        start = false;
+        $('#start').val("Start");
+        $('#soundAlert')[0].play();
+        return;
+      }
+      hand.rotation.z = angle;
+      setTimeout(function() {
+        move();
+      }, 100);
+    } else {
+      angle += (2 * Math.PI) / 60;
+      if (angle.toFixed(3) >= ((2 * Math.PI).toFixed(3))) {
+        angle = 0;
+        start = false;
+        $('#start').val("Start");
+        $('#soundAlert')[0].play();
+        return;
+      }
+      hand.rotation.z = angle;
+      setTimeout(function() {
+        move();
+      }, 1000);
+    }
+  }
+}
+
+function render() {
+  renderer.render(scene, camera);
+}
+
+init();
+animate();
+
+$('#start').click(function() {
+  var duration = 0;
+  var pressed = {};
+  window.onmousedown = function(e) {
+    if (pressed[e.which]) return;
+    pressed[e.which] = e.timeStamp;
+  };
+  window.onmouseup = function(e) {
+    if (!pressed[e.which]) return;
+    duration = (e.timeStamp - pressed[e.which]) / 1000;
+    pressed[e.which] = 0;
+    console.log(`time: ${duration}`);
+    if (duration >= 1) {
+      $('#start').val("Start");
+      angle = 0;
+      hand.rotation.z = 0;
+    }
+  };
+  start = !start;
+  move();
+  if (start) {
+    $('#start').val("Stop");
+  } else {
+    $('#start').val("Start");
+  }
+});
+$('#changeMode').click(function() {
+  mode = !mode;
+});
+$('#plusSec').click(function() {
+  angle += 10 * 2 * Math.PI / 60;
+  if (angle >= (2 * Math.PI)) {
+    angle = 0;
+    start = false;
+    $('#start').val("Start");
+    $('#soundAlert')[0].play();
+  }
+  if (!start) {
+    hand.rotation.z = angle;
+    animate();
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+	body {
+	  background-color: #fff;
+	  color: #111;
+	  margin: 0px;
+	  overflow: hidden;
+	  font-family: Monospace;
+	  font-size: 20px;
+	  position: absolute;
+	}
+
+	#info {
+	  position: absolute;
+	  top: 0px;
+	  width: 100%;
+	  padding: 5px;
+	  text-align: center;
+	  color: #FFFFFF
+	}
+</style>
+</head>
+
+<body>
+<div id="info">
+	I3B38 Train
+	<br/>Press "S" to (stop/start) the train
+</div>
+<script src="https://threejs.org/build/three.min.js"></script>
+<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+<script src="https://jyunming-chen.github.io/tutsplus/js/KeyboardState.js"></script>
+
+<script>
+var renderer, scene, camera, angle = 0;
+var keyboard = new KeyboardState();
+var turn = true;
+//火車
+var group = new THREE.Group();
+//車尾
+var train1 = new THREE.Group();
+//車頭
+var train2 = new THREE.Group();
+//組件
+var car1, car2, wheel, chimney, coupler1, coupler2, track, smoke;
+
+var i = 0;
+var smokeSize = [];
+for (let j = 0; j < 15; j++) {
+  smokeSize[j] = 1 + 0.08 * j;
+}
+for (let j = 15; j < 30; j++) {
+  smokeSize[j] = smokeSize[14] - 0.05 * j;
+}
+
+init();
+animate();
+
+function init() {
+  renderer = new THREE.WebGLRenderer();
+  document.body.appendChild(renderer.domElement);
+  var width = window.innerWidth;
+  var height = window.innerHeight;
+  renderer.setSize(width, height);
+  scene = new THREE.Scene();
+  //座標
+  var grid = new THREE.GridHelper(20, 20);
+  scene.add(grid);
+  var axes = new THREE.AxesHelper(5);
+  scene.add(axes);
+  //鏡頭
+  camera = new THREE.PerspectiveCamera(35, width / height, 1, 100);
+  camera.position.y = 15;
+  camera.position.z = 40;
+  camera.lookAt(new THREE.Vector3(0, 0, 0));
+  //控制
+  let controls = new THREE.OrbitControls(camera, renderer.domElement);
+  window.addEventListener('resize', onWindowResize, false);
+
+  ////////////////////////////////////////////////////////
+
+  //車廂
+  var carGeometry = new THREE.BoxGeometry(1, 1, 1.75);
+  var carMaterial = new THREE.MeshStandardMaterial({
+    color: "#BE77FF"
+  });
+  car = new THREE.Mesh(carGeometry, carMaterial);
+  car.position.set(1, 0.07, 0);
+
+  //輪子
+  var wheelGeometry = new THREE.TorusGeometry(0.25, 0.1, 15, 100);
+  var wheelMaterial = new THREE.MeshBasicMaterial({
+    color: 0x666666
+  });
+  wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+  var wheel1 = wheel.clone();
+  wheel1.position.set(0.4, -0.2, 0.5); //右前輪
+  wheel1.rotation.y = (Math.PI / 2);
+  var wheel2 = wheel.clone();
+  wheel2.position.set(0.4, -0.2, -0.55); //右後輪
+  wheel2.rotation.y = (Math.PI / 2);
+  var wheel3 = wheel.clone();
+  wheel3.position.set(1.62, -0.2, 0.5); //左前輪
+  wheel3.rotation.y = (Math.PI / 2);
+  var wheel4 = wheel.clone();
+  wheel4.position.set(1.62, -0.2, -0.55); //左後輪
+  wheel4.rotation.y = (Math.PI / 2);
+
+  //車頭
+  var headGeometry = new THREE.CylinderGeometry(0.3, 0.45, 0.5);
+  var headMaterial = new THREE.MeshNormalMaterial();
+  head = new THREE.Mesh(headGeometry, headMaterial);
+  head.position.set(1, 0.1, 1.12);
+  head.rotation.x = (Math.PI / 2);
+
+  //煙囪
+  var chimneyGeometry = new THREE.CylinderGeometry(0.2, 0.25, 0.5);
+  var chimneyMaterial = new THREE.MeshBasicMaterial({
+    color: 0xffffff
+  });
+  chimney = new THREE.Mesh(chimneyGeometry, chimneyMaterial);
+  chimney.position.set(1, 0.75, 0.5);
+
+  //車廂連結線
+  var couplerGeometry = new THREE.CylinderGeometry(0.05, 0.05, 2);
+  var couplerMaterial = new THREE.MeshBasicMaterial({
+    color: 0x666666
+  });
+  coupler1 = new THREE.Mesh(couplerGeometry, couplerMaterial);
+  coupler1.rotation.x = (Math.PI / 2);
+  coupler2 = coupler1.clone();
+  coupler1.position.set(0.8, -0.2, -0.8);
+  coupler2.position.set(1.2, -0.2, -0.8);
+
+  //煙霧
+  var smokeGeometry = new THREE.TorusGeometry(0.25, 0.1, 15, 100);
+  var smokeMaterial = new THREE.MeshBasicMaterial({
+    color: 0xffffff
+  });
+  smoke = new THREE.Mesh(smokeGeometry, smokeMaterial);
+  smoke.rotation.x = (Math.PI / 2);
+  smoke.position.set(1, 1.5, 0.5);
+
+  //組裝車廂組件
+  train1.add(car, wheel1, wheel2, wheel3, wheel4);
+  train2 = train1.clone();
+  train2.add(head, chimney, coupler1, coupler2, smoke);
+  train2.translateZ(2.3);
+  train2.translateX(-0.2);
+  train2.rotateY(-(Math.PI / 16));
+  //合成火車
+  group.add(train1, train2);
+  group.translateY(0.5);
+  scene.add(group);
+
+  //軌道
+  var trackGeometry = new THREE.TorusGeometry(7.8, 0.1, 5, 100);
+  var trackMaterial = new THREE.MeshNormalMaterial();
+  track = new THREE.Mesh(trackGeometry, trackMaterial);
+  track.rotation.x = (Math.PI / 2);
+  scene.add(track);
+  trackGeometry = new THREE.TorusGeometry(8.5, 0.1, 5, 100);
+  track = new THREE.Mesh(trackGeometry, trackMaterial);
+  track.rotation.x = (Math.PI / 2);
+  scene.add(track);
+
+  //打光
+  var light = new THREE.PointLight(0xff0000, 30, 10);
+  light.position.set(0, 5, 0);
+  scene.add(light);
+}
+
+function animate() {
+  //切換跑動
+  keyboard.update();
+  if (keyboard.down("S")) turn = !turn;
+
+  if (turn) {
+    angle += 0.01;
+    i += 1;
+  }
+  if (angle == 2) angle = 0;
+  if (i == 30) i = 0;
+  smoke.scale.set(smokeSize[i], smokeSize[i], smokeSize[i]);
+  group.position.set(7 * Math.cos(angle), 0.5, 7 * Math.sin(angle));
+  group.rotation.y = -angle;
+  requestAnimationFrame(animate);
+  renderer.render(scene, camera);
+}
+
+function onWindowResize() {
+  var width = window.innerWidth;
+  var height = window.innerHeight;
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+  renderer.setSize(width, height);
+}
+
+</script>
+</body>
+</html>
