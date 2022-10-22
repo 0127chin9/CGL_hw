@@ -156,7 +156,7 @@ function animate() {
   requestAnimationFrame(animate);
 }
 
-function move() {
+function mode1() {
   if (start) {
     if (mode) {
       angle += (2 * Math.PI) / 600;
@@ -169,9 +169,15 @@ function move() {
       }
       hand.rotation.z = angle;
       setTimeout(function() {
-        move();
+        mode1();
       }, 100);
-    } else {
+    }
+  }
+}
+
+function mode2() {
+  if (start) {
+    if (!mode) {
       angle += (2 * Math.PI) / 60;
       if (angle.toFixed(3) >= ((2 * Math.PI).toFixed(3))) {
         angle = 0;
@@ -182,7 +188,7 @@ function move() {
       }
       hand.rotation.z = angle;
       setTimeout(function() {
-        move();
+        mode2();
       }, 1000);
     }
   }
@@ -214,7 +220,11 @@ $('#start').click(function() {
     }
   };
   start = !start;
-  move();
+  if (mode) {
+    mode1();
+  } else {
+    mode2();
+  }
   if (start) {
     $('#start').val("Stop");
   } else {
@@ -223,6 +233,11 @@ $('#start').click(function() {
 });
 $('#changeMode').click(function() {
   mode = !mode;
+  if (mode) {
+    mode1();
+  } else {
+    mode2();
+  }
 });
 $('#plusSec').click(function() {
   angle += 10 * 2 * Math.PI / 60;
