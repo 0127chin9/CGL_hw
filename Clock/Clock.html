@@ -69,7 +69,6 @@ function init() {
   camera.lookAt(new THREE.Vector3(0, 0, 0));
   //控制
   let controls = new THREE.OrbitControls(camera, renderer.domElement);
-  document.body.appendChild(renderer.domElement);
   //////////////////////////////////////////////////////////
   var clockFace = new THREE.Mesh(new THREE.CylinderGeometry(10, 10, 4, 40, 40), new THREE.MeshBasicMaterial({
     color: 0xFFFFFF,
@@ -100,9 +99,9 @@ function init() {
     'https://i.imgur.com/rBebNeB.png',
     'https://i.imgur.com/75SXyx0.png',
     'https://i.imgur.com/kBV9hFw.png'
-  ]
-  for (let i = 0; i < 12; i++) {
-    let loader = new THREE.TextureLoader();
+  ];
+  let loader = new THREE.TextureLoader();
+  for (let i = 0; i < 12; i++) {  
     let texture = loader.load(picURL[i]);
     let texMat = new THREE.MeshBasicMaterial({
       map: texture,
