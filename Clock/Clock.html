@@ -101,7 +101,7 @@ function init() {
     'https://i.imgur.com/kBV9hFw.png'
   ];
   let loader = new THREE.TextureLoader();
-  for (let i = 0; i < 12; i++) {  
+  for (let i = 0; i < 12; i++) {
     let texture = loader.load(picURL[i]);
     let texMat = new THREE.MeshBasicMaterial({
       map: texture,
@@ -197,11 +197,11 @@ animate();
 $('#start').click(function() {
   var duration = 0;
   var pressed = {};
-  window.onmousedown = function(e) {
+  $('#start').mousedown(function(e) {
     if (pressed[e.which]) return;
     pressed[e.which] = e.timeStamp;
-  };
-  window.onmouseup = function(e) {
+  });
+  $('#start').mouseup(function(e) {
     if (!pressed[e.which]) return;
     duration = (e.timeStamp - pressed[e.which]) / 1000;
     pressed[e.which] = 0;
@@ -210,7 +210,7 @@ $('#start').click(function() {
       angle = 0;
       hand.rotation.z = 0;
     }
-  };
+  });
   start = !start;
   if (mode) {
     mode1();
